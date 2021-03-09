@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[4]:
+# In[1]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -65,12 +65,13 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 # 
 # 
 
-# In[23]:
+# In[2]:
 
 
 import torch
 import torchvision
 import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 
 
 # The output of torchvision datasets are PILImage images of range [0, 1].
@@ -80,7 +81,7 @@ import torchvision.transforms as transforms
 # 
 # 
 
-# In[24]:
+# In[3]:
 
 
 transform = transforms.Compose(
@@ -105,17 +106,30 @@ classes = ('plane', 'car', 'bird', 'cat',
 # 
 # 
 
-# In[25]:
+# In[4]:
 
 
-from lung_dataset import train_loader, test_loader
-trainloader = train_loader
-testloader = test_loader
+from lung_dataset import Lung_Dataset
+classification_type = "normal/infected"
+classes = classification_type.split("/")
+bs_val = 4
 
-classes = ('normal', 'infected')
+ld_train = Lung_Dataset("train", "normal/infected")
+trainloader = DataLoader(ld_train, batch_size = bs_val, shuffle = True)
+print(ld_train)
+
+ld_test = Lung_Dataset("test", "normal/infected")
+testloader = DataLoader(ld_test, batch_size = bs_val, shuffle = True)
+print(ld_test)
+
+ld_val = Lung_Dataset("val", "normal/infected")
+valloader = DataLoader(ld_val, batch_size = bs_val, shuffle = True)
+print(ld_val)
+
+ld_train.show_img(1)
 
 
-# In[26]:
+# In[5]:
 
 
 import matplotlib.pyplot as plt
@@ -134,7 +148,7 @@ def imshow(img):
 # get some random training images
 dataiter = iter(trainloader)
 images, labels = dataiter.next()
-labels = torch.argmax(labels, axis=1)
+# labels = torch.argmax(labels, axis=1)
 
 # show images
 imshow(torchvision.utils.make_grid(images))
@@ -142,7 +156,7 @@ imshow(torchvision.utils.make_grid(images))
 print(' '.join('%5s' % classes[labels[j]] for j in range(4)))
 
 
-# In[27]:
+# In[6]:
 
 
 images[0].shape
@@ -155,7 +169,7 @@ images[0].shape
 # 
 # 
 
-# In[28]:
+# In[7]:
 
 
 import torch.nn as nn
@@ -187,13 +201,13 @@ net = Net()
 # 
 # 
 
-# In[29]:
+# In[8]:
 
 
 print(net)
 
 
-# In[30]:
+# In[9]:
 
 
 import torch.optim as optim
@@ -211,7 +225,7 @@ optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 # 
 # 
 
-# In[31]:
+# In[10]:
 
 
 for epoch in range(2):  # loop over the dataset multiple times
@@ -220,7 +234,6 @@ for epoch in range(2):  # loop over the dataset multiple times
     for i, data in enumerate(trainloader, 0):
         # get the inputs; data is a list of [inputs, labels]
         inputs, labels = data
-        labels = torch.argmax(labels, axis=1)
 
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -245,7 +258,7 @@ print('Finished Training')
 # 
 # 
 
-# In[32]:
+# In[11]:
 
 
 PATH = './cifar_net.pth'
@@ -269,12 +282,11 @@ torch.save(net.state_dict(), PATH)
 # 
 # 
 
-# In[33]:
+# In[12]:
 
 
 dataiter = iter(testloader)
 images, labels = dataiter.next()
-labels = torch.argmax(labels, axis=1)
 
 # print images
 imshow(torchvision.utils.make_grid(images))
@@ -286,7 +298,7 @@ print('GroundTruth: ', ' '.join('%5s' % classes[labels[j]] for j in range(4)))
 # 
 # 
 
-# In[34]:
+# In[13]:
 
 
 net = Net()
@@ -297,7 +309,7 @@ net.load_state_dict(torch.load(PATH))
 # 
 # 
 
-# In[35]:
+# In[14]:
 
 
 outputs = net(images)
@@ -310,7 +322,7 @@ outputs = net(images)
 # 
 # 
 
-# In[36]:
+# In[15]:
 
 
 _, predicted = torch.max(outputs, 1)
@@ -325,7 +337,7 @@ print('Predicted: ', ' '.join('%5s' % classes[predicted[j]]
 # 
 # 
 
-# In[37]:
+# In[16]:
 
 
 correct = 0
@@ -333,7 +345,6 @@ total = 0
 with torch.no_grad():
     for data in testloader:
         images, labels = data
-        labels = torch.argmax(labels, axis=1)
         outputs = net(images)
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
@@ -352,7 +363,7 @@ print('Accuracy of the network on the x test images: %d %%' % (
 # 
 # 
 
-# In[38]:
+# In[17]:
 
 
 class_correct = list(0. for i in range(10))
@@ -360,7 +371,6 @@ class_total = list(0. for i in range(10))
 with torch.no_grad():
     for data in testloader:
         images, labels = data
-        labels = torch.argmax(labels, axis=1)
         outputs = net(images)
         _, predicted = torch.max(outputs, 1)
         c = (predicted == labels).squeeze()
@@ -375,10 +385,10 @@ for i in range(2):
         classes[i], 100 * class_correct[i] / class_total[i]))
 
 
-# In[39]:
+# In[18]:
 
 
-get_ipython().system('jupyter nbconvert --to script cifar10_tutorial.ipynb')
+get_ipython().system('jupyter nbconvert --to script cifar10_tutorial-hk.ipynb')
 
 
 # In[ ]:
