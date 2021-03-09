@@ -21,9 +21,10 @@
 # - Pillow (PIL) for opening images,
 # - and torch/torchvision for typical operations on tensors, datasets and dataloaders.
 
-# In[1]:
+# In[27]:
 
 
+import collections
 import glob
 import random
 
@@ -45,20 +46,20 @@ MAIN = __name__ == "__main__"
 # 
 # The images stored in the **./dataset_demo** folder and its subfolder consists of 150 by 150 pixels greyscale images, representing X-Ray pictures of lungs. 
 
-# In[2]:
+# In[28]:
 
 
 if MAIN:
     get_ipython().system('tree dataset -d')
 
 
-# In[3]:
+# In[29]:
 
 
 dataset_folder = "dataset"
 
 
-# In[4]:
+# In[30]:
 
 
 data_split_paths = {
@@ -66,10 +67,9 @@ data_split_paths = {
     "val": "./{}/val/".format(dataset_folder),
     "test": "./{}/test/".format(dataset_folder),
 }
-data_split_paths
 
 
-# In[5]:
+# In[31]:
 
 
 class_paths = {
@@ -79,7 +79,7 @@ class_paths = {
 }
 
 
-# In[6]:
+# In[32]:
 
 
 classification_types = {
@@ -89,7 +89,7 @@ classification_types = {
 }
 
 
-# In[32]:
+# In[43]:
 
 
 class Lung_Dataset(Dataset):
@@ -129,10 +129,16 @@ class Lung_Dataset(Dataset):
         __str__ special method, usage print(object)
         Print type and description
         """
+        c = collections.Counter(label for filepath,label in self.filepaths_and_labels)
+        class_distbn = [c[index] for index in range(len(self.classes))]
+        
         msg = ""
         msg += "Type of object: {}\n".format(type(self))
         msg += "Data Split: {}\n".format(self.data_split)
-        msg += "Classification Type: {}".format(self.classification_type)
+        msg += "Classification Type: {}\n".format(self.classification_type)
+        msg += "Available Classes: {}\n".format(self.classes)
+        msg += "Class Distribution: {}\n".format(class_distbn)
+        msg += "Total Dataset Size: {}".format(len(self))
         return msg
         
     
@@ -171,12 +177,13 @@ class Lung_Dataset(Dataset):
         plt.close()
 
 
-# In[40]:
+# In[44]:
 
 
-ld_train = Lung_Dataset("train", "normal/infected")
-print(ld_train)
-ld_train.show_img(1)
+if MAIN:
+    ld_train = Lung_Dataset("train", "normal/infected")
+    print(ld_train)
+    ld_train.show_img(1)
 
 
 # ## 3. Creating a Dataloader object
@@ -187,7 +194,7 @@ ld_train.show_img(1)
 # 
 # Additional parameters for the DataLoader can be specified (see https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader for details), but it will not be necessary for this small project.
 
-# In[33]:
+# In[35]:
 
 
 # Batch size value to be used (to be decided freely, but set to 4 for demo)
@@ -198,21 +205,24 @@ bs_val = 4
 
 
 # Dataloader from dataset (train)
-train_loader = DataLoader(ld_train, batch_size = bs_val, shuffle = True)
-if MAIN: print(train_loader)
+if MAIN:
+    train_loader = DataLoader(ld_train, batch_size = bs_val, shuffle = True)
+    print(train_loader)
 
 
-# In[10]:
+# In[37]:
 
 
 # Dataloader from dataset (test and val)
-ld_test = Lung_Dataset("test", "normal/infected")
-test_loader = DataLoader(ld_test, batch_size = bs_val, shuffle = True)
-if MAIN: print(test_loader)
+if MAIN: 
+    ld_test = Lung_Dataset("test", "normal/infected")
+    test_loader = DataLoader(ld_test, batch_size = bs_val, shuffle = True)
+    print(test_loader)
 
-ld_val = Lung_Dataset("val", "normal/infected")
-val_loader = DataLoader(ld_val, batch_size = bs_val, shuffle = True)
-if MAIN: print(val_loader)
+if MAIN:
+    ld_val = Lung_Dataset("val", "normal/infected")
+    val_loader = DataLoader(ld_val, batch_size = bs_val, shuffle = True)
+    print(val_loader)
 
 
 # During the training, you will call for mini-batches using a for loop of some sort, probably similar to the one below.
@@ -221,7 +231,7 @@ if MAIN: print(val_loader)
 # 
 # We voluntarily interrupt it after one iteration of the mini-batch using an assert False.
 
-# In[11]:
+# In[38]:
 
 
 # Typical mini-batch for loop on dataloader (train)
@@ -243,7 +253,7 @@ if MAIN:
 # 
 # We could for instance, define a simple (probably too simple!) model below.
 
-# In[12]:
+# In[39]:
 
 
 # A simple mode
@@ -262,16 +272,17 @@ class Net(nn.Module):
         return output
 
 
-# In[13]:
+# In[40]:
 
 
 # Create model
-model = Net()
+if MAIN:
+    model = Net()
 
 
 # Later on, we will probably have to write a train function, which will implement a mini-batch loop, which resembles the one below. It will simply iterate on the DataLoader we have defined earlier.
 
-# In[14]:
+# In[15]:
 
 
 # Try model on one mini-batch
@@ -292,7 +303,7 @@ if MAIN:
 # Later on, you will have to train a model for classification, as suggested in the Small Project PDF!
 # Good luck!
 
-# In[15]:
+# In[16]:
 
 
 if MAIN:
