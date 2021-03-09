@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[4]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -65,7 +65,7 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 # 
 # 
 
-# In[2]:
+# In[23]:
 
 
 import torch
@@ -80,7 +80,7 @@ import torchvision.transforms as transforms
 # 
 # 
 
-# In[3]:
+# In[24]:
 
 
 transform = transforms.Compose(
@@ -105,7 +105,17 @@ classes = ('plane', 'car', 'bird', 'cat',
 # 
 # 
 
-# In[5]:
+# In[25]:
+
+
+from lung_dataset import train_loader, test_loader
+trainloader = train_loader
+testloader = test_loader
+
+classes = ('normal', 'infected')
+
+
+# In[26]:
 
 
 import matplotlib.pyplot as plt
@@ -124,11 +134,18 @@ def imshow(img):
 # get some random training images
 dataiter = iter(trainloader)
 images, labels = dataiter.next()
+labels = torch.argmax(labels, axis=1)
 
 # show images
 imshow(torchvision.utils.make_grid(images))
 # print labels
 print(' '.join('%5s' % classes[labels[j]] for j in range(4)))
+
+
+# In[27]:
+
+
+images[0].shape
 
 
 # 2. Define a Convolutional Neural Network
@@ -138,31 +155,27 @@ print(' '.join('%5s' % classes[labels[j]] for j in range(4)))
 # 
 # 
 
-# In[6]:
+# In[28]:
 
 
 import torch.nn as nn
 import torch.nn.functional as F
 
 
+# A simple mode
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        # Conv2D: 1 input channel, 8 output channels, 3 by 3 kernel, stride of 1.
+        self.conv1 = nn.Conv2d(1, 4, 3, 1)
+        self.fc1 = nn.Linear(87616, 2)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+        x = self.conv1(x)
+        x = torch.flatten(x, 1)
+        x = self.fc1(x)
+        output = F.log_softmax(x, dim = 1)
+        return output
 
 
 net = Net()
@@ -174,7 +187,13 @@ net = Net()
 # 
 # 
 
-# In[7]:
+# In[29]:
+
+
+print(net)
+
+
+# In[30]:
 
 
 import torch.optim as optim
@@ -192,7 +211,7 @@ optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 # 
 # 
 
-# In[8]:
+# In[31]:
 
 
 for epoch in range(2):  # loop over the dataset multiple times
@@ -201,6 +220,7 @@ for epoch in range(2):  # loop over the dataset multiple times
     for i, data in enumerate(trainloader, 0):
         # get the inputs; data is a list of [inputs, labels]
         inputs, labels = data
+        labels = torch.argmax(labels, axis=1)
 
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -225,7 +245,7 @@ print('Finished Training')
 # 
 # 
 
-# In[9]:
+# In[32]:
 
 
 PATH = './cifar_net.pth'
@@ -249,11 +269,12 @@ torch.save(net.state_dict(), PATH)
 # 
 # 
 
-# In[10]:
+# In[33]:
 
 
 dataiter = iter(testloader)
 images, labels = dataiter.next()
+labels = torch.argmax(labels, axis=1)
 
 # print images
 imshow(torchvision.utils.make_grid(images))
@@ -265,7 +286,7 @@ print('GroundTruth: ', ' '.join('%5s' % classes[labels[j]] for j in range(4)))
 # 
 # 
 
-# In[11]:
+# In[34]:
 
 
 net = Net()
@@ -276,7 +297,7 @@ net.load_state_dict(torch.load(PATH))
 # 
 # 
 
-# In[12]:
+# In[35]:
 
 
 outputs = net(images)
@@ -289,7 +310,7 @@ outputs = net(images)
 # 
 # 
 
-# In[13]:
+# In[36]:
 
 
 _, predicted = torch.max(outputs, 1)
@@ -304,7 +325,7 @@ print('Predicted: ', ' '.join('%5s' % classes[predicted[j]]
 # 
 # 
 
-# In[14]:
+# In[37]:
 
 
 correct = 0
@@ -312,12 +333,13 @@ total = 0
 with torch.no_grad():
     for data in testloader:
         images, labels = data
+        labels = torch.argmax(labels, axis=1)
         outputs = net(images)
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
 
-print('Accuracy of the network on the 10000 test images: %d %%' % (
+print('Accuracy of the network on the x test images: %d %%' % (
     100 * correct / total))
 
 
@@ -330,7 +352,7 @@ print('Accuracy of the network on the 10000 test images: %d %%' % (
 # 
 # 
 
-# In[15]:
+# In[38]:
 
 
 class_correct = list(0. for i in range(10))
@@ -338,97 +360,31 @@ class_total = list(0. for i in range(10))
 with torch.no_grad():
     for data in testloader:
         images, labels = data
+        labels = torch.argmax(labels, axis=1)
         outputs = net(images)
         _, predicted = torch.max(outputs, 1)
         c = (predicted == labels).squeeze()
-        for i in range(4):
+        for i in range(2):
             label = labels[i]
             class_correct[label] += c[i].item()
             class_total[label] += 1
 
 
-for i in range(10):
+for i in range(2):
     print('Accuracy of %5s : %2d %%' % (
         classes[i], 100 * class_correct[i] / class_total[i]))
 
 
-# Okay, so what next?
-# 
-# How do we run these neural networks on the GPU?
-# 
-# Training on GPU
-# ----------------
-# Just like how you transfer a Tensor onto the GPU, you transfer the neural
-# net onto the GPU.
-# 
-# Let's first define our device as the first visible cuda device if we have
-# CUDA available:
-# 
-# 
-
-# In[16]:
-
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-# Assuming that we are on a CUDA machine, this should print a CUDA device:
-
-print(device)
-
-
-# The rest of this section assumes that ``device`` is a CUDA device.
-# 
-# Then these methods will recursively go over all modules and convert their
-# parameters and buffers to CUDA tensors:
-# 
-# .. code:: python
-# 
-#     net.to(device)
-# 
-# 
-# Remember that you will have to send the inputs and targets at every step
-# to the GPU too:
-# 
-# .. code:: python
-# 
-#         inputs, labels = data[0].to(device), data[1].to(device)
-# 
-# Why dont I notice MASSIVE speedup compared to CPU? Because your network
-# is really small.
-# 
-# **Exercise:** Try increasing the width of your network (argument 2 of
-# the first ``nn.Conv2d``, and argument 1 of the second ``nn.Conv2d`` –
-# they need to be the same number), see what kind of speedup you get.
-# 
-# **Goals achieved**:
-# 
-# - Understanding PyTorch's Tensor library and neural networks at a high level.
-# - Train a small neural network to classify images
-# 
-# Training on multiple GPUs
-# -------------------------
-# If you want to see even more MASSIVE speedup using all of your GPUs,
-# please check out :doc:`data_parallel_tutorial`.
-# 
-# Where do I go next?
-# -------------------
-# 
-# -  :doc:`Train neural nets to play video games </intermediate/reinforcement_q_learning>`
-# -  `Train a state-of-the-art ResNet network on imagenet`_
-# -  `Train a face generator using Generative Adversarial Networks`_
-# -  `Train a word-level language model using Recurrent LSTM networks`_
-# -  `More examples`_
-# -  `More tutorials`_
-# -  `Discuss PyTorch on the Forums`_
-# -  `Chat with other users on Slack`_
-# 
-# 
-# 
-
-# In[4]:
+# In[39]:
 
 
 get_ipython().system('jupyter nbconvert --to script cifar10_tutorial.ipynb')
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:

@@ -21,9 +21,10 @@
 # - Pillow (PIL) for opening images,
 # - and torch/torchvision for typical operations on tensors, datasets and dataloaders.
 
-# In[1]:
+# In[6]:
 
 
+import glob
 # Matplotlib
 import matplotlib.pyplot as plt
 # Numpy
@@ -38,12 +39,20 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torchvision import transforms
 
+MAIN = __name__ == "__main__"
+
 
 # ## 1. Getting familiar with the dataset
 # 
 # The images stored in the **./dataset_demo** folder and its subfolder consists of 150 by 150 pixels greyscale images, representing X-Ray pictures of lungs. 
 
-# In[2]:
+# In[7]:
+
+
+dataset_folder = "dataset"
+
+
+# In[8]:
 
 
 # All images are of size 150 x 150
@@ -52,52 +61,52 @@ size = (150, 150)
 
 # The images, consists of X-ray pictures of infected lungs (class with index 1 and label 'infected') or people with no infection diagnosis (class with index 0 and label 'normal').
 
-# In[3]:
+# In[9]:
 
 
 # Only two classes will be considered here (normal and infected)
 classes = {0: 'normal', 1: 'infected'}
-print(classes)
+if MAIN: print(classes)
 
 
 # The dataset has been split into training, testing and validation sets, containing several non-identical pictures.
 
-# In[4]:
+# In[10]:
 
 
 # The dataset has been split in training, testing and validation groups
 groups = ['train', 'test', 'val']
-print(groups)
+if MAIN: print(groups)
 
 
 # This dataset is a simplified subset of the one you will be working on for the small project.
 # It contains a rather limited number of images, and will only be used in this notebook to demonstrate how to create a PyTorch dataloader, which can later be fed to our PyTorch models.
 
-# In[5]:
-
-
-# Number of images in each part of the dataset
-dataset_numbers = {'train_normal': 36,                   'train_infected': 34,                   'val_normal': 4,                   'val_infected': 4,                   'test_normal': 14,                   'test_infected': 13}
-print(dataset_numbers)
-
-
 # Each subset is stored in a different subfolder of the ./dataset_demo/ folder, as listed in the dictionary below.
 
-# In[6]:
+# In[11]:
 
 
 # Path to images for different parts of the dataset
-dataset_paths = {'train_normal': './dataset_demo/train/normal/',                 'train_infected': './dataset_demo/train/infected/',                 'val_normal': './dataset_demo/val/normal/',                 'val_infected': './dataset_demo/val/infected/',                 'test_normal': './dataset_demo/test/normal/',                 'test_infected': './dataset_demo/test/infected/'}
-print(dataset_paths)
+dataset_paths = {'train_normal': './{}/train/normal/'.format(dataset_folder),                 'train_infected': './{}/train/infected/covid/'.format(dataset_folder),                 'val_normal': './{}/val/normal/'.format(dataset_folder),                 'val_infected': './{}/val/infected/covid/'.format(dataset_folder),                 'test_normal': './{}/test/normal/'.format(dataset_folder),                 'test_infected': './{}/test/infected/covid/'.format(dataset_folder)}
+if MAIN: print(dataset_paths)
+
+
+# In[12]:
+
+
+dataset_numbers = {dataset:len(glob.glob(path+"*.jpg")) for dataset,path in dataset_paths.items()}
+
+if MAIN: print(dataset_numbers)
 
 
 # The images can simply be opened by using their full path and the open function of the PIL.Image library. It can then be displayed on screen using matplotlib. Note that the pictures are greyscale, but for readability, matplotlib will display them using an automatic color mapping.
 
-# In[7]:
+# In[13]:
 
 
 # Display an image
-path_to_file = './dataset_demo/train/normal/1.jpg'
+path_to_file = './{}/train/normal/1.jpg'.format(dataset_folder)
 with open(path_to_file, 'rb') as f:
     im = np.asarray(Image.open(f))
     plt.imshow(im)
@@ -106,20 +115,20 @@ f.close()
 
 # As expected, the images are 150 by 150 pixels images.
 
-# In[8]:
+# In[9]:
 
 
 # Image shape is indeed 150 x 150
-print(im.shape)
+if MAIN: print(im.shape)
 
 
 # And these images consist of a Numpy array (thanks to the np.asarray() operation in the previous cell), with values ranging between 0 and 255. Later on, we will have to normalize these values.
 
-# In[9]:
+# In[10]:
 
 
 # Images are defined as a Numpy array of values between 0 and 256
-print(im)
+if MAIN: print(im)
 
 
 # ## 2. Creating a Dataset object
@@ -139,7 +148,7 @@ print(im)
 # 
 # Our full general Dataset object, Lung_Dataset, is shown below. Note that it inherits from the Dataset class from the torch.utils.data library.
 
-# In[10]:
+# In[11]:
 
 
 class Lung_Dataset(Dataset):
@@ -166,7 +175,7 @@ class Lung_Dataset(Dataset):
         self.dataset_numbers = {'train_normal': 36,                                'train_infected': 34,                                'val_normal': 4,                                'val_infected': 4,                                'test_normal': 14,                                'test_infected': 13}
         
         # Path to images for different parts of the dataset
-        self.dataset_paths = {'train_normal': './dataset_demo/train/normal/',                              'train_infected': './dataset_demo/train/infected/',                              'val_normal': './dataset_demo/val/normal/',                              'val_infected': './dataset_demo/val/infected/',                              'test_normal': './dataset_demo/test/normal/',                              'test_infected': './dataset_demo/test/infected/'}
+        self.dataset_paths = {'train_normal': './{}/train/normal/'.format(dataset_folder),                              'train_infected': './{}/train/infected/'.format(dataset_folder),                              'val_normal': './{}/val/normal/'.format(dataset_folder),                              'val_infected': './{}/val/infected/'.format(dataset_folder),                              'test_normal': './{}/test/normal/'.format(dataset_folder),                              'test_infected': './{}/test/infected/'.format(dataset_folder)}
         
         
     def describe(self):
@@ -241,11 +250,11 @@ class Lung_Dataset(Dataset):
 
 # It can simply be called, and a generic description can be displayed.
 
-# In[11]:
+# In[12]:
 
 
 ld = Lung_Dataset()
-ld.describe()
+if MAIN: ld.describe()
 
 
 # We can then load an image and check what are the values contained in the 150 by 150 Numpy array.
@@ -255,14 +264,14 @@ ld.describe()
 
 
 im = ld.open_img('train', 'normal', 1)
-print(im.shape)
-print(im)
+if MAIN: print(im.shape)
+if MAIN: print(im)
 
 
 # In[13]:
 
 
-ld.show_img('train', 'normal', 1)
+if MAIN: ld.show_img('train', 'normal', 1)
 
 
 # ### 2.b. Creating a train Dataset object
@@ -309,7 +318,7 @@ class Lung_Train_Dataset(Dataset):
         self.dataset_numbers = {'train_normal': 36,                                'train_infected': 34}
         
         # Path to images for different parts of the dataset
-        self.dataset_paths = {'train_normal': './dataset_demo/train/normal/',                              'train_infected': './dataset_demo/train/infected/'}
+        self.dataset_paths = {'train_normal': './{}/train/normal/'.format(dataset_folder),                              'train_infected': './{}/train/infected/'.format(dataset_folder)}
         
         
     def describe(self):
@@ -420,7 +429,7 @@ class Lung_Train_Dataset(Dataset):
 
 
 ld_train = Lung_Train_Dataset()
-ld_train.describe()
+if MAIN: ld_train.describe()
 
 
 # The length function applied to our dataset indeed gives the total number of images in this train dataset, that is 70.
@@ -428,7 +437,7 @@ ld_train.describe()
 # In[16]:
 
 
-print(len(ld_train))
+if MAIN: print(len(ld_train))
 
 
 # Finally, using the getitem method (i.e. using square bracket indexing on our object) will produce a 150 by 150 torch tensor corresponding to our image, with normalize values. It also produces a one-hot vector, in torch tensor format as well.
@@ -436,10 +445,10 @@ print(len(ld_train))
 # In[17]:
 
 
-im, class_oh = ld_train[64]
-print(im.shape)
-print(im)
-print(class_oh)
+if MAIN: im, class_oh = ld_train[64]
+if MAIN: print(im.shape)
+if MAIN: print(im)
+if MAIN: print(class_oh)
 
 
 # ### 2.c. Creating a test and val Dataset object
@@ -470,7 +479,7 @@ class Lung_Test_Dataset(Dataset):
         self.dataset_numbers = {'test_normal': 14,                                'test_infected': 13}
         
         # Path to images for different parts of the dataset
-        self.dataset_paths = {'test_normal': './dataset_demo/test/normal/',                              'test_infected': './dataset_demo/test/infected/'}
+        self.dataset_paths = {'test_normal': './{}/test/normal/'.format(dataset_folder),                              'test_infected': './{}/test/infected/'.format(dataset_folder)}
         
         
     def describe(self):
@@ -579,22 +588,22 @@ class Lung_Test_Dataset(Dataset):
 
 
 ld_test = Lung_Test_Dataset()
-ld_test.describe()
+if MAIN: ld_test.describe()
 
 
 # In[20]:
 
 
-print(len(ld_test))
+if MAIN: print(len(ld_test))
 
 
 # In[21]:
 
 
 im, class_oh = ld_test[18]
-print(im.shape)
-print(im)
-print(class_oh)
+if MAIN: print(im.shape)
+if MAIN: print(im)
+if MAIN: print(class_oh)
 
 
 # In[22]:
@@ -621,7 +630,7 @@ class Lung_Val_Dataset(Dataset):
         self.dataset_numbers = {'val_normal': 4,                                'val_infected': 4}
         
         # Path to images for different parts of the dataset
-        self.dataset_paths = {'val_normal': './dataset_demo/val/normal/',                              'val_infected': './dataset_demo/val/infected/'}
+        self.dataset_paths = {'val_normal': './{}/val/normal/'.format(dataset_folder),                              'val_infected': './{}/val/infected/'.format(dataset_folder)}
         
         
     def describe(self):
@@ -730,7 +739,7 @@ class Lung_Val_Dataset(Dataset):
 
 
 ld_val = Lung_Val_Dataset()
-ld_val.describe()
+if MAIN: ld_val.describe()
 
 
 # In[24]:
@@ -743,9 +752,9 @@ print(len(ld_val))
 
 
 im, class_oh = ld_val[3]
-print(im.shape)
-print(im)
-print(class_oh)
+if MAIN: print(im.shape)
+if MAIN: print(im)
+if MAIN: print(class_oh)
 
 
 # ## 3. Creating a Dataloader object
@@ -768,7 +777,7 @@ bs_val = 4
 
 # Dataloader from dataset (train)
 train_loader = DataLoader(ld_train, batch_size = bs_val, shuffle = True)
-print(train_loader)
+if MAIN: print(train_loader)
 
 
 # In[28]:
@@ -776,9 +785,9 @@ print(train_loader)
 
 # Dataloader from dataset (test and val)
 test_loader = DataLoader(ld_test, batch_size = bs_val, shuffle = True)
-print(test_loader)
+if MAIN: print(test_loader)
 val_loader = DataLoader(ld_val, batch_size = bs_val, shuffle = True)
-print(val_loader)
+if MAIN: print(val_loader)
 
 
 # During the training, you will call for mini-batches using a for loop of some sort, probably similar to the one below.
@@ -791,7 +800,8 @@ print(val_loader)
 
 
 # Typical mini-batch for loop on dataloader (train)
-for k, v in enumerate(train_loader):
+if MAIN: 
+  for k, v in enumerate(train_loader):
     print("-----")
     print(k)
     print(v[0])
@@ -840,7 +850,8 @@ model = Net()
 
 
 # Try model on one mini-batch
-for batch_idx, (images_data, target_labels) in enumerate(train_loader):
+if MAIN: 
+  for batch_idx, (images_data, target_labels) in enumerate(train_loader):
     predicted_labels = model(images_data)
     print(predicted_labels)
     print(target_labels)
@@ -855,6 +866,13 @@ for batch_idx, (images_data, target_labels) in enumerate(train_loader):
 # 
 # Later on, you will have to train a model for classification, as suggested in the Small Project PDF!
 # Good luck!
+
+# In[14]:
+
+
+if MAIN:
+    get_ipython().system('jupyter nbconvert --to script lung_dataset.ipynb')
+
 
 # In[ ]:
 
