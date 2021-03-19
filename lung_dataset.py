@@ -21,7 +21,7 @@
 # - Pillow (PIL) for opening images,
 # - and torch/torchvision for typical operations on tensors, datasets and dataloaders.
 
-# In[27]:
+# In[1]:
 
 
 import collections
@@ -46,20 +46,20 @@ MAIN = __name__ == "__main__"
 # 
 # The images stored in the **./dataset_demo** folder and its subfolder consists of 150 by 150 pixels greyscale images, representing X-Ray pictures of lungs. 
 
-# In[28]:
+# In[2]:
 
 
 if MAIN:
     get_ipython().system('tree dataset -d')
 
 
-# In[29]:
+# In[3]:
 
 
 dataset_folder = "dataset"
 
 
-# In[30]:
+# In[4]:
 
 
 data_split_paths = {
@@ -69,7 +69,7 @@ data_split_paths = {
 }
 
 
-# In[31]:
+# In[5]:
 
 
 class_paths = {
@@ -79,7 +79,7 @@ class_paths = {
 }
 
 
-# In[32]:
+# In[6]:
 
 
 classification_types = {
@@ -89,7 +89,29 @@ classification_types = {
 }
 
 
-# In[43]:
+# In[7]:
+
+
+if MAIN:
+    ims = []
+    for filepath in glob.glob("{}/*/*/*.jpg".format(dataset_folder, data_split_paths["train"])):
+        with open(filepath, 'rb') as f:
+            # Convert to Numpy array and normalize pixel values by dividing by 255.
+            im = (np.asarray(Image.open(f))/255).flatten()
+            ims.append(im)
+
+    for filepath in glob.glob("{}/*/*/*/*.jpg".format(dataset_folder, data_split_paths["train"])):
+        with open(filepath, 'rb') as f:
+            # Convert to Numpy array and normalize pixel values by dividing by 255.
+            im = (np.asarray(Image.open(f))/255).flatten()
+            ims.append(im)
+
+    pixels = np.concatenate(ims)
+    print("{} pictures in train dataset\npixel mean = {:.3f}, pixel stddev = {:.3f}".format(
+        len(ims), np.mean(pixels), np.std(pixels)))
+
+
+# In[8]:
 
 
 class Lung_Dataset(Dataset):
@@ -123,21 +145,21 @@ class Lung_Dataset(Dataset):
         self.classification_type = classification_type
         self.classes = classes
 
+        c = collections.Counter(label for filepath,label in self.filepaths_and_labels)
+        self.class_distbn = [c[index] for index in range(len(self.classes))]
     
     def __str__(self):
         """
         __str__ special method, usage print(object)
         Print type and description
         """
-        c = collections.Counter(label for filepath,label in self.filepaths_and_labels)
-        class_distbn = [c[index] for index in range(len(self.classes))]
         
         msg = ""
         msg += "Type of object: {}\n".format(type(self))
         msg += "Data Split: {}\n".format(self.data_split)
         msg += "Classification Type: {}\n".format(self.classification_type)
         msg += "Available Classes: {}\n".format(self.classes)
-        msg += "Class Distribution: {}\n".format(class_distbn)
+        msg += "Class Distribution: {}\n".format(self.class_distbn)
         msg += "Total Dataset Size: {}".format(len(self))
         return msg
         
@@ -164,26 +186,47 @@ class Lung_Dataset(Dataset):
         
         im = transforms.functional.to_tensor(np.array(im)).float()
         
-        # shiying to include various random transforms here
-        # take Tensor of torch.Size([1, 150, 150]) and return the same
+        if self.data_split == "train":
+            transform = transforms.Compose([
+                transforms.RandomRotation((-5,5)),
+            ])
+            im = transform(im)
+            
+        transform = transforms.Compose([
+                transforms.CenterCrop((140)),
+                transforms.Resize((150)),
+            ])
+        im = transform(im)
+
+        im = transforms.Normalize(mean=0.482, std=0.236)(im)
 
         return im, label
     
-    def show_img(self, index):
-        im, label = self[index]
-        plt.imshow(im[0,:,:])
-        plt.title("Label {} {}".format(label, self.classes[label]))
+    def show_imgs(self, indexes, titles=[]):
+        fig, ax = plt.subplots(ncols=len(indexes), nrows=1, squeeze=False, figsize=(14,4))
+        for i,index in enumerate(indexes):
+            im, label = self[index]
+            ax[0][i].imshow(im[0,:,:])
+            if titles:
+                text_color = "black"
+                if titles[i] != self.classes[label][0]:
+                    text_color = "red"
+                ax[0][i].set_title(titles[i], fontdict={"color":text_color})
+            else:
+                ax[0][i].set_title("{}:{}".format(label, self.classes[label]))
+            ax[0][i].set_xticks([])
+            ax[0][i].set_yticks([])
         plt.show()
         plt.close()
 
 
-# In[44]:
+# In[9]:
 
 
 if MAIN:
-    ld_train = Lung_Dataset("train", "normal/infected")
+    ld_train = Lung_Dataset("train", "normal/non-covid/covid")
     print(ld_train)
-    ld_train.show_img(1)
+    ld_train.show_imgs([0, 3700, 5000])
 
 
 # ## 3. Creating a Dataloader object
@@ -194,14 +237,14 @@ if MAIN:
 # 
 # Additional parameters for the DataLoader can be specified (see https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader for details), but it will not be necessary for this small project.
 
-# In[35]:
+# In[10]:
 
 
 # Batch size value to be used (to be decided freely, but set to 4 for demo)
 bs_val = 4
 
 
-# In[36]:
+# In[11]:
 
 
 # Dataloader from dataset (train)
@@ -210,7 +253,7 @@ if MAIN:
     print(train_loader)
 
 
-# In[37]:
+# In[12]:
 
 
 # Dataloader from dataset (test and val)
@@ -231,7 +274,7 @@ if MAIN:
 # 
 # We voluntarily interrupt it after one iteration of the mini-batch using an assert False.
 
-# In[38]:
+# In[13]:
 
 
 # Typical mini-batch for loop on dataloader (train)
@@ -253,7 +296,7 @@ if MAIN:
 # 
 # We could for instance, define a simple (probably too simple!) model below.
 
-# In[39]:
+# In[14]:
 
 
 # A simple mode
@@ -272,7 +315,7 @@ class Net(nn.Module):
         return output
 
 
-# In[40]:
+# In[15]:
 
 
 # Create model
@@ -282,7 +325,7 @@ if MAIN:
 
 # Later on, we will probably have to write a train function, which will implement a mini-batch loop, which resembles the one below. It will simply iterate on the DataLoader we have defined earlier.
 
-# In[15]:
+# In[16]:
 
 
 # Try model on one mini-batch
@@ -303,7 +346,7 @@ if MAIN:
 # Later on, you will have to train a model for classification, as suggested in the Small Project PDF!
 # Good luck!
 
-# In[16]:
+# In[17]:
 
 
 if MAIN:
