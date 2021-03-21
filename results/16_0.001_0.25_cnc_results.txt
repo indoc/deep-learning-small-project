@@ -1,0 +1,6 @@
+num of parameters: 930148
+best model weights saved at: ./actual_saved_models/16_0.001_0.25_cnc13:06:57.pth
+train loss: 0.5488880913642145
+train weighted accuracy: 0.6769711476196186
+test loss: 0.41377670980813935
+test weighted accuracy: 0.8304990653146774

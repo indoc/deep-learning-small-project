@@ -1,0 +1,6 @@
+num of parameters: 45348
+best model weights saved at: ./actual_saved_models/8_layers_net_infected_vs_covid10:24:28.pth
+train loss: 0.5361653937832002
+train weighted accuracy: 0.6874928888355919
+test loss: 0.40158242331402194
+test weighted accuracy: 0.8312770256235956

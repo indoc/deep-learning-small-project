@@ -5,3 +5,6 @@ dataset/
 data/
 !dataset/.gitkeep
 *.pth
+
+# for now
+actual_saved_models/
