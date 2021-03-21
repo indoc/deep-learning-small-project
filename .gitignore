@@ -4,7 +4,7 @@
 # dataset/
 # data/
 # !dataset/.gitkeep
-*.pth
+# *.pth
 
 # for now
 # actual_saved_models/
