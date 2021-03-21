@@ -1,10 +1,10 @@
 *.pyc
 .ipynb_checkpoints/
 .DS_Store
-dataset/
-data/
-!dataset/.gitkeep
+# dataset/
+# data/
+# !dataset/.gitkeep
 *.pth
 
 # for now
-actual_saved_models/
+# actual_saved_models/
