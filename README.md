@@ -9,13 +9,14 @@ This repository contains the weights, plots and statistics of models that we pre
 
 ### How to use this repository
 
-To see the validation set as predicted by the model containing weights that we previously  trained and finetuned, run the report.ipynb. 
-We also include details about our Dataloader, data augmentation techniques, model architecture, finetuning parameters and performance metrics.
+To see the validation set as predicted by the model containing weights that we previously trained and finetuned, run [report.ipynb](./report.ipynb). 
+In this report we also include details about our DataLoader, data augmentation techniques, model architecture, finetuning parameters and performance metrics.
 
-To train the models, run the submit_training.ipynb . Here we run the training models for the two 
-classifier and combine the outputs in a two stage loader.
+To train the models, run the [submit_training.ipynb](./submit_training.ipynb). Here we run the training models for the two classifier and combine the outputs in a two stage loader.
 
-We place many of our functions in the functions.py file for modularization.
+Our DataLoader is modified from our instructors' sample code, and [lung_dataset.py](./lung_dataset.py) contains our custom DataLoader class - and this script is generated from [lung_dataset.ipynb](./lung_dataset.ipynb)
+
+We place many of our functions in the [functions.py](./functions.py) file for modularization.
 
 This repository will also contain a copy of the datasets, considering that the size of the datasets (27MB) is insignificant compared to the size of the saved models (2.4G).
 
